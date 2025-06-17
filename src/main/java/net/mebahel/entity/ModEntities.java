@@ -1,0 +1,17 @@
+package net.mebahel.entity;
+
+import net.fabricmc.fabric.api.object.builder.v1.entity.FabricEntityTypeBuilder;
+import net.mebahel.MebahelsSkullRevival;
+import net.minecraft.entity.EntityDimensions;
+import net.minecraft.entity.EntityType;
+import net.minecraft.entity.SpawnGroup;
+import net.minecraft.registry.Registries;
+import net.minecraft.registry.Registry;
+import net.minecraft.util.Identifier;
+
+public class ModEntities {
+    public static final EntityType<SkeletonHeadEntity> SKELETON_HEAD = Registry.register(
+            Registries.ENTITY_TYPE, new Identifier(MebahelsSkullRevival.MOD_ID, "skeleton_head"),
+            FabricEntityTypeBuilder.create(SpawnGroup.MONSTER, SkeletonHeadEntity::new)
+                    .dimensions(EntityDimensions.fixed(0.5f, 0.5f)).build());
+}
