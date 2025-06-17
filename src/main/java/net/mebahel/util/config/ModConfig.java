@@ -14,6 +14,7 @@ public class ModConfig {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     public static int skeletonHeadSpawnRate = 12;
     public static int witherSkeletonHeadSpawnRate = 12;
+    public static int timeBeforeRevival = 140;
 
     public static void loadConfig(File configDir) {
         if (!configDir.exists()) {
@@ -37,8 +38,14 @@ public class ModConfig {
                     updated = true;
                 }
 
+                if (data.timeBeforeRevival == null || data.timeBeforeRevival < 30) {
+                    data.timeBeforeRevival = 140;
+                    updated = true;
+                }
+
                 skeletonHeadSpawnRate = data.skeletonHeadSpawnRate;
                 witherSkeletonHeadSpawnRate = data.witherSkeletonHeadSpawnRate;
+                timeBeforeRevival = data.timeBeforeRevival;
 
                 if (updated) {
                     saveConfig(configDir);
@@ -53,7 +60,7 @@ public class ModConfig {
 
     public static void saveConfig(File configDir) {
         File configFile = new File(configDir, CONFIG_FILE_NAME);
-        ConfigData data = new ConfigData(skeletonHeadSpawnRate, witherSkeletonHeadSpawnRate);
+        ConfigData data = new ConfigData(skeletonHeadSpawnRate, witherSkeletonHeadSpawnRate, timeBeforeRevival);
         try (FileWriter writer = new FileWriter(configFile)) {
             GSON.toJson(data, writer);
         } catch (IOException e) {
@@ -64,10 +71,12 @@ public class ModConfig {
     private static class ConfigData {
         Integer skeletonHeadSpawnRate;
         Integer witherSkeletonHeadSpawnRate;
+        Integer timeBeforeRevival;
 
-        ConfigData(int skeletonHeadSpawnRate, int witherSkeletonHeadSpawnRate) {
+        ConfigData(int skeletonHeadSpawnRate, int witherSkeletonHeadSpawnRate, int timeBeforeRevival) {
             this.skeletonHeadSpawnRate = skeletonHeadSpawnRate;
             this.witherSkeletonHeadSpawnRate = witherSkeletonHeadSpawnRate;
+            this.timeBeforeRevival = timeBeforeRevival;
         }
     }
 }

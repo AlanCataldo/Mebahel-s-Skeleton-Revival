@@ -1,0 +1,13 @@
+{
+  "required": true,
+  "package": "net.mebahel.mixin",
+  "compatibilityLevel": "JAVA_17",
+  "mixins": [
+    "AbstractSkeletonEntityMixin",
+    "AbstractSkeletonSpawnerMixin",
+    "LivingEntityMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+	}
+}

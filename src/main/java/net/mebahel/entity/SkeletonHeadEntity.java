@@ -3,6 +3,7 @@ package net.mebahel.entity;
 import net.mebahel.accessor.ReanimatedFlagAccessor;
 import net.mebahel.ai.FleeTargetGoal;
 import net.mebahel.entity.variant.SkeletonHeadVariant;
+import net.mebahel.util.config.ModConfig;
 import net.minecraft.block.BlockState;
 import net.minecraft.entity.EntityData;
 import net.minecraft.entity.EntityType;
@@ -26,7 +27,6 @@ import net.minecraft.nbt.NbtCompound;
 import net.minecraft.sound.SoundEvent;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.Difficulty;
 import net.minecraft.world.LocalDifficulty;
 import net.minecraft.world.ServerWorldAccess;
 import net.minecraft.world.World;
@@ -59,32 +59,14 @@ public class SkeletonHeadEntity extends HostileEntity implements GeoEntity {
     public static final TrackedData<Integer> DATA_ID_TYPE_VARIANT =
             DataTracker.registerData(SkeletonHeadEntity.class, TrackedDataHandlerRegistry.INTEGER);
 
-    public static final TrackedData<Boolean> SWINGING = DataTracker.registerData(SkeletonHeadEntity.class,
-            TrackedDataHandlerRegistry.BOOLEAN);
 
     public static final TrackedData<Boolean> SHOULD_RESPAWN = DataTracker.registerData(SkeletonHeadEntity.class,
             TrackedDataHandlerRegistry.BOOLEAN);
 
-    public static final TrackedData<String> ATTACK_NAME = DataTracker.registerData(SkeletonHeadEntity.class,
-            TrackedDataHandlerRegistry.STRING);
+
     public static final TrackedData<Boolean> HAS_SPAWNED = DataTracker.registerData(SkeletonHeadEntity.class,
             TrackedDataHandlerRegistry.BOOLEAN);
 
-    public void setSwinging(boolean swinging) {
-        this.dataTracker.set(SWINGING, swinging);
-    }
-
-    public boolean isSwinging() {
-        return this.dataTracker.get(SWINGING);
-    }
-
-    public void setAttackName(String attackName) {
-        this.dataTracker.set(ATTACK_NAME, attackName);
-    }
-
-    public String getAttackName() {
-        return this.dataTracker.get(ATTACK_NAME);
-    }
 
     public boolean getHasSpawned() {
         return this.dataTracker.get(HAS_SPAWNED);
@@ -96,9 +78,7 @@ public class SkeletonHeadEntity extends HostileEntity implements GeoEntity {
 
     protected void initDataTracker() {
         super.initDataTracker();
-        this.dataTracker.startTracking(SWINGING, false);
         this.dataTracker.startTracking(DATA_ID_TYPE_VARIANT, 0);
-        this.dataTracker.startTracking(ATTACK_NAME, "attack");
         this.dataTracker.startTracking(HAS_SPAWNED, false);
         this.dataTracker.startTracking(SHOULD_RESPAWN, false);
     }
@@ -165,8 +145,6 @@ public class SkeletonHeadEntity extends HostileEntity implements GeoEntity {
     public EntityData initialize(ServerWorldAccess world, LocalDifficulty difficulty,
                                  SpawnReason spawnReason, @Nullable EntityData entityData,
                                  @Nullable NbtCompound entityNbt) {
-        this.setTarget(null);
-
         return super.initialize(world, difficulty, spawnReason, entityData, entityNbt);
     }
 
@@ -225,11 +203,11 @@ public class SkeletonHeadEntity extends HostileEntity implements GeoEntity {
         super.tick();
         lifeTickCounter++;
 
-        if (lifeTickCounter == 80 && !stoppedMoving) {
+        if (lifeTickCounter == ModConfig.timeBeforeRevival - 15 && !stoppedMoving) {
             stoppedMoving = true;
             Objects.requireNonNull(this.getAttributeInstance(EntityAttributes.GENERIC_MOVEMENT_SPEED)).setBaseValue(0);
         }
-        if (lifeTickCounter >= 95) {
+        if (lifeTickCounter >= ModConfig.timeBeforeRevival) {
             spawnSkeletonHead(this.getWorld());
         }
     }
