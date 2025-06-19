@@ -7,6 +7,7 @@ import net.minecraft.entity.SpawnReason;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.world.LocalDifficulty;
 import net.minecraft.world.ServerWorldAccess;
+import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
@@ -29,9 +30,17 @@ public class AbstractSkeletonSpawnerMixin implements SpawnedFromSpawnerAccessor 
         this.mebahel$fromSpawner = fromSpawner;
     }
 
-    @Inject(method = "initialize", at = @At("RETURN"))
-    private void captureSpawnReason(ServerWorldAccess world, LocalDifficulty difficulty, SpawnReason spawnReason,
-                                    EntityData entityData, NbtCompound entityNbt, CallbackInfoReturnable<EntityData> cir) {
+    @Inject(
+            method = "initialize",
+            at = @At("RETURN")
+    )
+    private void captureSpawnReason(
+            ServerWorldAccess world,
+            LocalDifficulty difficulty,
+            SpawnReason spawnReason,
+            @Nullable EntityData entityData,
+            CallbackInfoReturnable<EntityData> cir
+    ) {
         if (spawnReason == SpawnReason.SPAWNER) {
             this.mebahel$fromSpawner = true;
         }

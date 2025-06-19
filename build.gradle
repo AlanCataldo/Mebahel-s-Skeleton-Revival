@@ -11,9 +11,14 @@ base {
 }
 
 repositories {
-	maven {
-		name = 'GeckoLib'
-		url 'https://dl.cloudsmith.io/public/geckolib3/geckolib/maven/'
+	repositories {
+		maven {
+			name = 'GeckoLib'
+			url 'https://dl.cloudsmith.io/public/geckolib3/geckolib/maven/'
+			content {
+				includeGroup("software.bernie.geckolib")
+			}
+		}
 	}
 }
 
@@ -43,7 +48,7 @@ dependencies {
 
 	// Fabric API. This is technically optional, but you probably want it anyway.
 	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
-	modImplementation 'software.bernie.geckolib:geckolib-fabric-1.20.1:4.7.1.2'
+	modImplementation "software.bernie.geckolib:geckolib-fabric-${minecraft_version}:4.7.6"
 }
 
 processResources {
@@ -55,7 +60,7 @@ processResources {
 }
 
 tasks.withType(JavaCompile).configureEach {
-	it.options.release = 17
+	it.options.release = 21
 }
 
 java {

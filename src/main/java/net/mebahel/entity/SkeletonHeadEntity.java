@@ -5,9 +5,7 @@ import net.mebahel.ai.FleeTargetGoal;
 import net.mebahel.entity.variant.SkeletonHeadVariant;
 import net.mebahel.util.config.ModConfig;
 import net.minecraft.block.BlockState;
-import net.minecraft.entity.EntityData;
 import net.minecraft.entity.EntityType;
-import net.minecraft.entity.SpawnReason;
 import net.minecraft.entity.ai.goal.ActiveTargetGoal;
 import net.minecraft.entity.ai.goal.SwimGoal;
 import net.minecraft.entity.attribute.DefaultAttributeContainer;
@@ -27,15 +25,11 @@ import net.minecraft.nbt.NbtCompound;
 import net.minecraft.sound.SoundEvent;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.LocalDifficulty;
-import net.minecraft.world.ServerWorldAccess;
 import net.minecraft.world.World;
-import org.jetbrains.annotations.Nullable;
 import software.bernie.geckolib.animatable.GeoEntity;
-import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
-import software.bernie.geckolib.core.animatable.instance.SingletonAnimatableInstanceCache;
-import software.bernie.geckolib.core.animation.*;
-import software.bernie.geckolib.core.object.PlayState;
+import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
+import software.bernie.geckolib.animatable.instance.SingletonAnimatableInstanceCache;
+import software.bernie.geckolib.animation.*;
 
 import java.util.Objects;
 
@@ -76,12 +70,13 @@ public class SkeletonHeadEntity extends HostileEntity implements GeoEntity {
         this.dataTracker.set(HAS_SPAWNED, bool);
     }
 
-    protected void initDataTracker() {
-        super.initDataTracker();
-        this.dataTracker.startTracking(DATA_ID_TYPE_VARIANT, 0);
-        this.dataTracker.startTracking(HAS_SPAWNED, false);
-        this.dataTracker.startTracking(SHOULD_RESPAWN, false);
+    protected void initDataTracker(DataTracker.Builder builder) {
+        super.initDataTracker(builder);
+        builder.add(DATA_ID_TYPE_VARIANT, 0);
+        builder.add(HAS_SPAWNED, false);
+        builder.add(SHOULD_RESPAWN, false);
     }
+
 
     @Override
     protected void initGoals() {
@@ -139,13 +134,6 @@ public class SkeletonHeadEntity extends HostileEntity implements GeoEntity {
         controllers.add(new AnimationController(this, "controller", 0, this::predicate));
         controllers.add(new AnimationController(this, "spawning", 0, this::spawnPredicate));
         controllers.add(new AnimationController(this, "respawning", 0, this::respawnPredicate));
-    }
-
-    @Override
-    public EntityData initialize(ServerWorldAccess world, LocalDifficulty difficulty,
-                                 SpawnReason spawnReason, @Nullable EntityData entityData,
-                                 @Nullable NbtCompound entityNbt) {
-        return super.initialize(world, difficulty, spawnReason, entityData, entityNbt);
     }
 
     protected SoundEvent getAmbientSound() {
