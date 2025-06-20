@@ -6,6 +6,7 @@ import net.mebahel.entity.variant.SkeletonHeadVariant;
 import net.mebahel.util.config.ModConfig;
 import net.minecraft.block.BlockState;
 import net.minecraft.entity.EntityType;
+import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.ai.goal.ActiveTargetGoal;
 import net.minecraft.entity.ai.goal.SwimGoal;
 import net.minecraft.entity.attribute.DefaultAttributeContainer;
@@ -22,8 +23,10 @@ import net.minecraft.entity.passive.VillagerEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.raid.RaiderEntity;
 import net.minecraft.nbt.NbtCompound;
+import net.minecraft.registry.Registries;
 import net.minecraft.sound.SoundEvent;
 import net.minecraft.sound.SoundEvents;
+import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import software.bernie.geckolib.animatable.GeoEntity;
@@ -62,6 +65,17 @@ public class SkeletonHeadEntity extends HostileEntity implements GeoEntity {
             TrackedDataHandlerRegistry.BOOLEAN);
 
 
+    public static final TrackedData<String> ENTITY_TO_RESPAWN =
+            DataTracker.registerData(SkeletonHeadEntity.class, TrackedDataHandlerRegistry.STRING);
+
+    public Identifier getEntityToRespawn() {
+        return Identifier.of(this.dataTracker.get(ENTITY_TO_RESPAWN));
+    }
+
+    public void setEntityToRespawn(Identifier id) {
+        this.dataTracker.set(ENTITY_TO_RESPAWN, id.toString());
+    }
+
     public boolean getHasSpawned() {
         return this.dataTracker.get(HAS_SPAWNED);
     }
@@ -72,6 +86,7 @@ public class SkeletonHeadEntity extends HostileEntity implements GeoEntity {
 
     protected void initDataTracker(DataTracker.Builder builder) {
         super.initDataTracker(builder);
+        builder.add(ENTITY_TO_RESPAWN, "minecraft:skeleton");
         builder.add(DATA_ID_TYPE_VARIANT, 0);
         builder.add(HAS_SPAWNED, false);
         builder.add(SHOULD_RESPAWN, false);
@@ -178,12 +193,16 @@ public class SkeletonHeadEntity extends HostileEntity implements GeoEntity {
     public void writeCustomDataToNbt(NbtCompound nbt) {
         super.writeCustomDataToNbt(nbt);
         nbt.putBoolean("HasSpawned", true);
+        nbt.putString("EntityToRespawn", getEntityToRespawn().toString());
     }
 
     @Override
     public void readCustomDataFromNbt(NbtCompound nbt) {
         super.readCustomDataFromNbt(nbt);
         this.setHasSpawned(nbt.getBoolean("HasSpawned"));
+        if (nbt.contains("EntityToRespawn")) {
+            setEntityToRespawn(Identifier.of(nbt.getString("EntityToRespawn")));
+        }
     }
 
     @Override
@@ -201,22 +220,29 @@ public class SkeletonHeadEntity extends HostileEntity implements GeoEntity {
     }
 
     private void spawnSkeletonHead(World world) {
-        AbstractSkeletonEntity servant;
+        EntityType<?> type = Registries.ENTITY_TYPE.get(getEntityToRespawn());
 
-        if (this.getVariant() == SkeletonHeadVariant.WITHER_SKELETON) {
-            servant = EntityType.WITHER_SKELETON.create(world);
-        } else {
-            servant = EntityType.SKELETON.create(world);
+        if (type == null) {
+            System.err.println("Unknown entity type for respawn: " + getEntityToRespawn());
+            this.remove(RemovalReason.DISCARDED);
+            return;
         }
 
-        if (servant != null) {
-            ((ReanimatedFlagAccessor) servant).setReanimated(true);
-            servant.setPosition(this.getX(), this.getY(), this.getZ());
-            world.spawnEntity(servant);
+        if (!(type.create(world) instanceof LivingEntity servant)) {
+            System.err.println("Respawned entity is not a LivingEntity: " + getEntityToRespawn());
+            this.remove(RemovalReason.DISCARDED);
+            return;
         }
 
+        if (servant instanceof ReanimatedFlagAccessor reanimated) {
+            reanimated.setReanimated(true);
+        }
+
+        servant.setPosition(this.getX(), this.getY(), this.getZ());
+        world.spawnEntity(servant);
         this.remove(RemovalReason.DISCARDED);
     }
+
 
     public SkeletonHeadVariant getVariant() {
         return SkeletonHeadVariant.byId(this.getTypeVariant() & 255);

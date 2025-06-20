@@ -3,9 +3,9 @@
   "package": "net.mebahel.mixin",
   "compatibilityLevel": "JAVA_17",
   "mixins": [
-    "AbstractSkeletonEntityMixin",
-    "AbstractSkeletonSpawnerMixin",
-    "LivingEntityMixin"
+    "LivingEntityMixin",
+    "LivingEntityReanimatedFlagMixin",
+    "MobEntitySpawnerFlagMixin"
   ],
   "injectors": {
     "defaultRequire": 1
