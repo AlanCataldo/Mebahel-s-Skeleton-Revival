@@ -14,7 +14,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(MobEntity.class)
-public abstract class MobEntitySpawnerFlagMixin implements SpawnedFromSpawnerAccessor {
+public abstract class SkeletonHeadMobEntitySpawnerFlagMixin implements SpawnedFromSpawnerAccessor {
 
     @Unique
     private boolean mebahel$fromSpawner = false;

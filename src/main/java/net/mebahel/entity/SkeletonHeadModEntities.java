@@ -9,7 +9,7 @@ import net.minecraft.registry.Registries;
 import net.minecraft.registry.Registry;
 import net.minecraft.util.Identifier;
 
-public class ModEntities {
+public class SkeletonHeadModEntities {
     public static final EntityType<SkeletonHeadEntity> SKELETON_HEAD = Registry.register(
             Registries.ENTITY_TYPE, new Identifier(MebahelsSkullRevival.MOD_ID, "skeleton_head"),
             FabricEntityTypeBuilder.create(SpawnGroup.MONSTER, SkeletonHeadEntity::new)

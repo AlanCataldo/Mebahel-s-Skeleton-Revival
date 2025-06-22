@@ -9,7 +9,7 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 
-public class ModConfig {
+public class SkeletonHeadModConfig {
     private static final String CONFIG_FILE_NAME = MebahelsSkullRevival.MOD_ID + "_config.json";
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     public static int skeletonHeadSpawnRate = 12;

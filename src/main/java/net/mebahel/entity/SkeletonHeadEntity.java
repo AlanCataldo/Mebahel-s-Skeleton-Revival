@@ -3,7 +3,7 @@ package net.mebahel.entity;
 import net.mebahel.accessor.ReanimatedFlagAccessor;
 import net.mebahel.ai.FleeTargetGoal;
 import net.mebahel.entity.variant.SkeletonHeadVariant;
-import net.mebahel.util.config.ModConfig;
+import net.mebahel.util.config.SkeletonHeadModConfig;
 import net.minecraft.block.BlockState;
 import net.minecraft.entity.EntityData;
 import net.minecraft.entity.EntityType;
@@ -18,7 +18,6 @@ import net.minecraft.entity.damage.DamageTypes;
 import net.minecraft.entity.data.DataTracker;
 import net.minecraft.entity.data.TrackedData;
 import net.minecraft.entity.data.TrackedDataHandlerRegistry;
-import net.minecraft.entity.mob.AbstractSkeletonEntity;
 import net.minecraft.entity.mob.HostileEntity;
 import net.minecraft.entity.passive.IronGolemEntity;
 import net.minecraft.entity.passive.VillagerEntity;
@@ -222,11 +221,11 @@ public class SkeletonHeadEntity extends HostileEntity implements GeoEntity {
         super.tick();
         lifeTickCounter++;
 
-        if (lifeTickCounter == ModConfig.timeBeforeRevival - 15 && !stoppedMoving) {
+        if (lifeTickCounter == SkeletonHeadModConfig.timeBeforeRevival - 15 && !stoppedMoving) {
             stoppedMoving = true;
             Objects.requireNonNull(this.getAttributeInstance(EntityAttributes.GENERIC_MOVEMENT_SPEED)).setBaseValue(0);
         }
-        if (lifeTickCounter >= ModConfig.timeBeforeRevival) {
+        if (lifeTickCounter >= SkeletonHeadModConfig.timeBeforeRevival) {
             spawnSkeletonHead(this.getWorld());
         }
     }
