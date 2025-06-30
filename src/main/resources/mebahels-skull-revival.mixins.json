@@ -3,6 +3,8 @@
   "package": "net.mebahel.mixin",
   "compatibilityLevel": "JAVA_17",
   "mixins": [
+    "SkeletonHeadNoLootMixin",
+    "SkeletonHeadNoXpMixin",
     "SkeletonHeadLivingEntityMixin",
     "SkeletonHeadLivingEntityReanimatedFlagMixin",
     "SkeletonHeadMobEntitySpawnerFlagMixin"

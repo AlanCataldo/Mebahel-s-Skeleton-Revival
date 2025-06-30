@@ -7,12 +7,15 @@ import net.minecraft.client.render.entity.EntityRendererFactory;
 import net.minecraft.util.Identifier;
 import org.jetbrains.annotations.Nullable;
 import software.bernie.geckolib.renderer.GeoEntityRenderer;
-import software.bernie.geckolib.renderer.layer.AutoGlowingGeoLayer;
+
 
 public class SkeletonHeadRenderer extends GeoEntityRenderer<SkeletonHeadEntity> {
+
     public SkeletonHeadRenderer(EntityRendererFactory.Context renderManager) {
         super(renderManager, new SkeletonHeadModel());
         this.shadowRadius = 0.35f;
+        addRenderLayer(new SkeletonHeadArmorLayer(this));
+
     }
     @Override
     public RenderLayer getRenderType(SkeletonHeadEntity animatable, Identifier texture, @Nullable VertexConsumerProvider bufferSource, float partialTick) {

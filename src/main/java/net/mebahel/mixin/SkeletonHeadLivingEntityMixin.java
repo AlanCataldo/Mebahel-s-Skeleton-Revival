@@ -7,8 +7,10 @@ import net.mebahel.entity.SkeletonHeadEntity;
 import net.mebahel.entity.variant.SkeletonHeadVariant;
 import net.mebahel.util.config.SkeletonHeadModConfig;
 import net.mebahel.util.config.SkullEntityListConfig;
+import net.minecraft.entity.EquipmentSlot;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.damage.DamageSource;
+import net.minecraft.item.ItemStack;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.Identifier;
 import net.minecraft.registry.Registries;
@@ -26,7 +28,8 @@ public abstract class SkeletonHeadLivingEntityMixin {
 
         if (!entity.getWorld().isClient && entity.getWorld() instanceof ServerWorld serverWorld) {
             if (entity instanceof ReanimatedFlagAccessor reanimated && reanimated.isReanimated()) return;
-            if (entity instanceof SpawnedFromSpawnerAccessor spawner && spawner.isFromSpawner()) return;
+            if (!SkeletonHeadModConfig.canSpawnFromSpawner)
+                if (entity instanceof SpawnedFromSpawnerAccessor spawner && spawner.isFromSpawner()) return;
 
             Identifier entityId = Registries.ENTITY_TYPE.getId(entity.getType());
             SkeletonHeadVariant variant = null;
@@ -45,9 +48,12 @@ public abstract class SkeletonHeadLivingEntityMixin {
                 if (skull != null) {
                     skull.setPosition(entity.getX(), entity.getY(), entity.getZ());
                     skull.setVariant(variant);
-
-                    // ✅ Spécifie l'entité à réanimer
                     skull.setEntityToRespawn(entityId);
+
+                    ItemStack headStack = entity.getEquippedStack(EquipmentSlot.HEAD);
+                    if (!headStack.isEmpty()) {
+                        skull.equipStack(EquipmentSlot.HEAD, headStack.copy());
+                    }
 
                     serverWorld.spawnEntity(skull);
                 }

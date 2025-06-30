@@ -1,14 +1,12 @@
 package net.mebahel.entity;
 
+import net.mebahel.MebahelsSkullRevival;
 import net.mebahel.accessor.ReanimatedFlagAccessor;
 import net.mebahel.ai.FleeTargetGoal;
 import net.mebahel.entity.variant.SkeletonHeadVariant;
 import net.mebahel.util.config.SkeletonHeadModConfig;
 import net.minecraft.block.BlockState;
-import net.minecraft.entity.EntityData;
-import net.minecraft.entity.EntityType;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.SpawnReason;
+import net.minecraft.entity.*;
 import net.minecraft.entity.ai.goal.ActiveTargetGoal;
 import net.minecraft.entity.ai.goal.SwimGoal;
 import net.minecraft.entity.attribute.DefaultAttributeContainer;
@@ -23,6 +21,7 @@ import net.minecraft.entity.passive.IronGolemEntity;
 import net.minecraft.entity.passive.VillagerEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.raid.RaiderEntity;
+import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.registry.Registries;
 import net.minecraft.sound.SoundEvent;
@@ -37,6 +36,7 @@ import software.bernie.geckolib.animatable.GeoEntity;
 import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
 import software.bernie.geckolib.core.animatable.instance.SingletonAnimatableInstanceCache;
 import software.bernie.geckolib.core.animation.*;
+import software.bernie.geckolib.core.animation.AnimationState;
 import software.bernie.geckolib.core.object.PlayState;
 
 import java.util.Objects;
@@ -46,6 +46,7 @@ public class SkeletonHeadEntity extends HostileEntity implements GeoEntity {
         super(entityType, world);
         this.ambientSoundChance = -this.getMinAmbientSoundDelay();
     }
+    private ItemStack helmet = ItemStack.EMPTY;
 
     private int lifeTickCounter = 0;
 
@@ -205,6 +206,9 @@ public class SkeletonHeadEntity extends HostileEntity implements GeoEntity {
         super.writeCustomDataToNbt(nbt);
         nbt.putBoolean("HasSpawned", true);
         nbt.putString("EntityToRespawn", getEntityToRespawn().toString());
+        if (!helmet.isEmpty()) {
+            nbt.put("Helmet", helmet.writeNbt(new NbtCompound()));
+        }
     }
 
     @Override
@@ -213,6 +217,9 @@ public class SkeletonHeadEntity extends HostileEntity implements GeoEntity {
         this.setHasSpawned(nbt.getBoolean("HasSpawned"));
         if (nbt.contains("EntityToRespawn")) {
             setEntityToRespawn(new Identifier(nbt.getString("EntityToRespawn")));
+        }
+        if (nbt.contains("Helmet")) {
+            this.helmet = ItemStack.fromNbt(nbt.getCompound("Helmet"));
         }
     }
 
@@ -249,6 +256,11 @@ public class SkeletonHeadEntity extends HostileEntity implements GeoEntity {
             reanimated.setReanimated(true);
         }
 
+        ItemStack headStack = this.getEquippedStack(EquipmentSlot.HEAD);
+        if (!headStack.isEmpty()) {
+            servant.equipStack(EquipmentSlot.HEAD, headStack);
+        }
+
         servant.setPosition(this.getX(), this.getY(), this.getZ());
         world.spawnEntity(servant);
         this.remove(RemovalReason.DISCARDED);
@@ -264,6 +276,20 @@ public class SkeletonHeadEntity extends HostileEntity implements GeoEntity {
 
     public void setVariant(SkeletonHeadVariant variant) {
         this.dataTracker.set(DATA_ID_TYPE_VARIANT, variant.getId() & 255);
+    }
+    @Override
+    public Identifier getLootTableId() {
+        if (this.getVariant() == SkeletonHeadVariant.WITHER_SKELETON) {
+            return new Identifier(MebahelsSkullRevival.MOD_ID, "entities/wither_skeleton_head");
+        }
+        return new Identifier(MebahelsSkullRevival.MOD_ID, "entities/skeleton_head");
+    }
+    @Override
+    public int getXpToDrop() {
+        if (!SkeletonHeadModConfig.respawnedEntityShouldDropExperience) {
+            return 0;
+        }
+        return super.getXpToDrop();
     }
 }
 
