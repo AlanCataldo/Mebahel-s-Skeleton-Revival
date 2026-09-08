@@ -13,6 +13,7 @@ import net.minecraft.entity.attribute.DefaultAttributeContainer;
 import net.minecraft.entity.attribute.EntityAttributes;
 import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.entity.damage.DamageTypes;
+import net.minecraft.entity.effect.StatusEffectInstance;
 import net.minecraft.entity.data.DataTracker;
 import net.minecraft.entity.data.TrackedData;
 import net.minecraft.entity.data.TrackedDataHandlerRegistry;
@@ -120,6 +121,12 @@ public class SkeletonHeadEntity extends HostileEntity implements GeoEntity {
                 .add(EntityAttributes.GENERIC_ATTACK_KNOCKBACK, 0.5f);
     }
 
+    public void setHealthFromOriginal(float originalMaxHealth) {
+        double skullMaxHealth = originalMaxHealth * SkeletonHeadModConfig.skeletonHeadHealthPercentage / 100.0;
+        Objects.requireNonNull(this.getAttributeInstance(EntityAttributes.GENERIC_MAX_HEALTH)).setBaseValue(skullMaxHealth);
+        this.setHealth((float) skullMaxHealth);
+    }
+
     private PlayState predicate(AnimationState animationState) {
         if (animationState.isMoving() && !this.stoppedMoving) {
             animationState.getController().setAnimation(RawAnimation.begin().then("walk", Animation.LoopType.LOOP));
@@ -202,6 +209,14 @@ public class SkeletonHeadEntity extends HostileEntity implements GeoEntity {
     }
 
     @Override
+    public boolean handleFallDamage(float fallDistance, float damageMultiplier, DamageSource damageSource) {
+        if (!SkeletonHeadModConfig.skeletonHeadTakesFallDamage) {
+            return false;
+        }
+        return super.handleFallDamage(fallDistance, damageMultiplier, damageSource);
+    }
+
+    @Override
     public void writeCustomDataToNbt(NbtCompound nbt) {
         super.writeCustomDataToNbt(nbt);
         nbt.putBoolean("HasSpawned", true);
@@ -258,7 +273,16 @@ public class SkeletonHeadEntity extends HostileEntity implements GeoEntity {
 
         ItemStack headStack = this.getEquippedStack(EquipmentSlot.HEAD);
         if (!headStack.isEmpty()) {
-            servant.equipStack(EquipmentSlot.HEAD, headStack);
+            servant.equipStack(EquipmentSlot.HEAD, headStack.copy());
+        }
+
+        if (this.hasCustomName()) {
+            servant.setCustomName(this.getCustomName());
+            servant.setCustomNameVisible(this.isCustomNameVisible());
+        }
+
+        for (StatusEffectInstance effect : this.getStatusEffects()) {
+            servant.addStatusEffect(new StatusEffectInstance(effect));
         }
 
         servant.setPosition(this.getX(), this.getY(), this.getZ());
@@ -286,7 +310,7 @@ public class SkeletonHeadEntity extends HostileEntity implements GeoEntity {
     }
     @Override
     public int getXpToDrop() {
-        if (!SkeletonHeadModConfig.respawnedEntityShouldDropExperience) {
+        if (!SkeletonHeadModConfig.skeletonHeadShouldDropExperience) {
             return 0;
         }
         return super.getXpToDrop();

@@ -10,6 +10,7 @@ import net.mebahel.util.config.SkullEntityListConfig;
 import net.minecraft.entity.EquipmentSlot;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.damage.DamageSource;
+import net.minecraft.entity.effect.StatusEffectInstance;
 import net.minecraft.item.ItemStack;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.Identifier;
@@ -27,7 +28,9 @@ public abstract class SkeletonHeadLivingEntityMixin {
         LivingEntity entity = (LivingEntity)(Object)this;
 
         if (!entity.getWorld().isClient && entity.getWorld() instanceof ServerWorld serverWorld) {
-            if (entity instanceof ReanimatedFlagAccessor reanimated && reanimated.isReanimated()) return;
+            if (!SkeletonHeadModConfig.reanimatedEntitiesCanSpawnHeads
+                    && entity instanceof ReanimatedFlagAccessor reanimated
+                    && reanimated.isReanimated()) return;
             if (!SkeletonHeadModConfig.canSpawnFromSpawner)
                 if (entity instanceof SpawnedFromSpawnerAccessor spawner && spawner.isFromSpawner()) return;
 
@@ -49,6 +52,16 @@ public abstract class SkeletonHeadLivingEntityMixin {
                     skull.setPosition(entity.getX(), entity.getY(), entity.getZ());
                     skull.setVariant(variant);
                     skull.setEntityToRespawn(entityId);
+                    skull.setHealthFromOriginal(entity.getMaxHealth());
+
+                    if (entity.hasCustomName()) {
+                        skull.setCustomName(entity.getCustomName());
+                        skull.setCustomNameVisible(entity.isCustomNameVisible());
+                    }
+
+                    for (StatusEffectInstance effect : entity.getStatusEffects()) {
+                        skull.addStatusEffect(new StatusEffectInstance(effect));
+                    }
 
                     ItemStack headStack = entity.getEquippedStack(EquipmentSlot.HEAD);
                     if (!headStack.isEmpty()) {

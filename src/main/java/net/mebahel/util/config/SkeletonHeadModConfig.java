@@ -15,6 +15,9 @@ public class SkeletonHeadModConfig {
     public static int skeletonHeadSpawnRate = 12;
     public static int witherSkeletonHeadSpawnRate = 12;
     public static int timeBeforeRevival = 140;
+    public static int skeletonHeadHealthPercentage = 40;
+    public static boolean reanimatedEntitiesCanSpawnHeads = false;
+    public static boolean skeletonHeadTakesFallDamage = false;
     public static boolean skeletonHeadShouldDropExperience = true;
     public static boolean respawnedEntityShouldDropExperience = true;
     public static boolean respawnedEntityShouldDropItem = true;
@@ -47,6 +50,21 @@ public class SkeletonHeadModConfig {
                     updated = true;
                 }
 
+                if (data.skeletonHeadHealthPercentage == null || data.skeletonHeadHealthPercentage < 1 || data.skeletonHeadHealthPercentage > 100) {
+                    data.skeletonHeadHealthPercentage = 40;
+                    updated = true;
+                }
+
+                if (data.reanimatedEntitiesCanSpawnHeads == null) {
+                    data.reanimatedEntitiesCanSpawnHeads = false;
+                    updated = true;
+                }
+
+                if (data.skeletonHeadTakesFallDamage == null) {
+                    data.skeletonHeadTakesFallDamage = false;
+                    updated = true;
+                }
+
                 if (data.skeletonHeadShouldDropExperience == null) {
                     data.skeletonHeadShouldDropExperience = false;
                     updated = true;
@@ -70,6 +88,9 @@ public class SkeletonHeadModConfig {
                 skeletonHeadSpawnRate = data.skeletonHeadSpawnRate;
                 witherSkeletonHeadSpawnRate = data.witherSkeletonHeadSpawnRate;
                 timeBeforeRevival = data.timeBeforeRevival;
+                skeletonHeadHealthPercentage = data.skeletonHeadHealthPercentage;
+                reanimatedEntitiesCanSpawnHeads = data.reanimatedEntitiesCanSpawnHeads;
+                skeletonHeadTakesFallDamage = data.skeletonHeadTakesFallDamage;
                 skeletonHeadShouldDropExperience = data.skeletonHeadShouldDropExperience;
                 respawnedEntityShouldDropExperience = data.respawnedEntityShouldDropExperience;
                 respawnedEntityShouldDropItem = data.respawnedEntityShouldDropItem;
@@ -88,7 +109,8 @@ public class SkeletonHeadModConfig {
 
     public static void saveConfig(File configDir) {
         File configFile = new File(configDir, CONFIG_FILE_NAME);
-        ConfigData data = new ConfigData(skeletonHeadSpawnRate, witherSkeletonHeadSpawnRate, timeBeforeRevival, skeletonHeadShouldDropExperience,
+        ConfigData data = new ConfigData(skeletonHeadSpawnRate, witherSkeletonHeadSpawnRate, timeBeforeRevival, skeletonHeadHealthPercentage,
+                reanimatedEntitiesCanSpawnHeads, skeletonHeadTakesFallDamage, skeletonHeadShouldDropExperience,
                 respawnedEntityShouldDropExperience, respawnedEntityShouldDropItem, canSpawnFromSpawner);
         try (FileWriter writer = new FileWriter(configFile)) {
             GSON.toJson(data, writer);
@@ -101,17 +123,24 @@ public class SkeletonHeadModConfig {
         Integer skeletonHeadSpawnRate;
         Integer witherSkeletonHeadSpawnRate;
         Integer timeBeforeRevival;
+        Integer skeletonHeadHealthPercentage;
+        Boolean reanimatedEntitiesCanSpawnHeads;
+        Boolean skeletonHeadTakesFallDamage;
         Boolean skeletonHeadShouldDropExperience;
         Boolean respawnedEntityShouldDropExperience;
         Boolean respawnedEntityShouldDropItem;
         Boolean canSpawnFromSpawner;
 
-        ConfigData(int skeletonHeadSpawnRate, int witherSkeletonHeadSpawnRate, int timeBeforeRevival, Boolean skeletonHeadShouldDropExperience,
+        ConfigData(int skeletonHeadSpawnRate, int witherSkeletonHeadSpawnRate, int timeBeforeRevival, int skeletonHeadHealthPercentage,
+                   Boolean reanimatedEntitiesCanSpawnHeads, Boolean skeletonHeadTakesFallDamage, Boolean skeletonHeadShouldDropExperience,
                    Boolean respawnedEntityShouldDropExperience, Boolean respawnedEntityShouldDropItem,
                    Boolean canSpawnFromSpawner) {
             this.skeletonHeadSpawnRate = skeletonHeadSpawnRate;
             this.witherSkeletonHeadSpawnRate = witherSkeletonHeadSpawnRate;
             this.timeBeforeRevival = timeBeforeRevival;
+            this.skeletonHeadHealthPercentage = skeletonHeadHealthPercentage;
+            this.reanimatedEntitiesCanSpawnHeads = reanimatedEntitiesCanSpawnHeads;
+            this.skeletonHeadTakesFallDamage = skeletonHeadTakesFallDamage;
             this.skeletonHeadShouldDropExperience = skeletonHeadShouldDropExperience;
             this.respawnedEntityShouldDropExperience = respawnedEntityShouldDropExperience;
             this.respawnedEntityShouldDropItem = respawnedEntityShouldDropItem;
