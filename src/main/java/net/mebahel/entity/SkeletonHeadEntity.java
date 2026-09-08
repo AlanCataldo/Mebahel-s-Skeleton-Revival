@@ -1,11 +1,13 @@
 package net.mebahel.entity;
 
+import net.mebahel.MebahelsSkullRevival;
 import net.mebahel.accessor.ReanimatedFlagAccessor;
 import net.mebahel.ai.FleeTargetGoal;
 import net.mebahel.entity.variant.SkeletonHeadVariant;
-import net.mebahel.util.config.ModConfig;
+import net.mebahel.util.config.SkeletonHeadModConfig;
 import net.minecraft.block.BlockState;
 import net.minecraft.entity.EntityType;
+import net.minecraft.entity.EquipmentSlot;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.ai.goal.ActiveTargetGoal;
 import net.minecraft.entity.ai.goal.SwimGoal;
@@ -13,17 +15,21 @@ import net.minecraft.entity.attribute.DefaultAttributeContainer;
 import net.minecraft.entity.attribute.EntityAttributes;
 import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.entity.damage.DamageTypes;
+import net.minecraft.entity.effect.StatusEffectInstance;
 import net.minecraft.entity.data.DataTracker;
 import net.minecraft.entity.data.TrackedData;
 import net.minecraft.entity.data.TrackedDataHandlerRegistry;
-import net.minecraft.entity.mob.AbstractSkeletonEntity;
 import net.minecraft.entity.mob.HostileEntity;
 import net.minecraft.entity.passive.IronGolemEntity;
 import net.minecraft.entity.passive.VillagerEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.raid.RaiderEntity;
+import net.minecraft.item.ItemStack;
+import net.minecraft.loot.LootTable;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.registry.Registries;
+import net.minecraft.registry.RegistryKey;
+import net.minecraft.registry.RegistryKeys;
 import net.minecraft.sound.SoundEvent;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.Identifier;
@@ -41,6 +47,8 @@ public class SkeletonHeadEntity extends HostileEntity implements GeoEntity {
         super(entityType, world);
         this.ambientSoundChance = -this.getMinAmbientSoundDelay();
     }
+
+    private ItemStack helmet = ItemStack.EMPTY;
 
     private int lifeTickCounter = 0;
 
@@ -113,6 +121,12 @@ public class SkeletonHeadEntity extends HostileEntity implements GeoEntity {
                 .add(EntityAttributes.GENERIC_ATTACK_DAMAGE, 5.0f)
                 .add(EntityAttributes.GENERIC_KNOCKBACK_RESISTANCE, 0.2f)
                 .add(EntityAttributes.GENERIC_ATTACK_KNOCKBACK, 0.5f);
+    }
+
+    public void setHealthFromOriginal(float originalMaxHealth) {
+        double skullMaxHealth = originalMaxHealth * SkeletonHeadModConfig.skeletonHeadHealthPercentage / 100.0;
+        Objects.requireNonNull(this.getAttributeInstance(EntityAttributes.GENERIC_MAX_HEALTH)).setBaseValue(skullMaxHealth);
+        this.setHealth((float) skullMaxHealth);
     }
 
     private PlayState predicate(AnimationState animationState) {
@@ -190,10 +204,21 @@ public class SkeletonHeadEntity extends HostileEntity implements GeoEntity {
     }
 
     @Override
+    public boolean handleFallDamage(float fallDistance, float damageMultiplier, DamageSource damageSource) {
+        if (!SkeletonHeadModConfig.skeletonHeadTakesFallDamage) {
+            return false;
+        }
+        return super.handleFallDamage(fallDistance, damageMultiplier, damageSource);
+    }
+
+    @Override
     public void writeCustomDataToNbt(NbtCompound nbt) {
         super.writeCustomDataToNbt(nbt);
         nbt.putBoolean("HasSpawned", true);
         nbt.putString("EntityToRespawn", getEntityToRespawn().toString());
+        if (!helmet.isEmpty()) {
+            nbt.put("Helmet", helmet.encodeAllowEmpty(this.getRegistryManager()));
+        }
     }
 
     @Override
@@ -203,6 +228,9 @@ public class SkeletonHeadEntity extends HostileEntity implements GeoEntity {
         if (nbt.contains("EntityToRespawn")) {
             setEntityToRespawn(Identifier.of(nbt.getString("EntityToRespawn")));
         }
+        if (nbt.contains("Helmet")) {
+            this.helmet = ItemStack.fromNbtOrEmpty(this.getRegistryManager(), nbt.getCompound("Helmet"));
+        }
     }
 
     @Override
@@ -210,11 +238,11 @@ public class SkeletonHeadEntity extends HostileEntity implements GeoEntity {
         super.tick();
         lifeTickCounter++;
 
-        if (lifeTickCounter == ModConfig.timeBeforeRevival - 15 && !stoppedMoving) {
+        if (lifeTickCounter == SkeletonHeadModConfig.timeBeforeRevival - 15 && !stoppedMoving) {
             stoppedMoving = true;
             Objects.requireNonNull(this.getAttributeInstance(EntityAttributes.GENERIC_MOVEMENT_SPEED)).setBaseValue(0);
         }
-        if (lifeTickCounter >= ModConfig.timeBeforeRevival) {
+        if (lifeTickCounter >= SkeletonHeadModConfig.timeBeforeRevival) {
             spawnSkeletonHead(this.getWorld());
         }
     }
@@ -238,6 +266,20 @@ public class SkeletonHeadEntity extends HostileEntity implements GeoEntity {
             reanimated.setReanimated(true);
         }
 
+        ItemStack headStack = this.getEquippedStack(EquipmentSlot.HEAD);
+        if (!headStack.isEmpty()) {
+            servant.equipStack(EquipmentSlot.HEAD, headStack.copy());
+        }
+
+        if (this.hasCustomName()) {
+            servant.setCustomName(this.getCustomName());
+            servant.setCustomNameVisible(this.isCustomNameVisible());
+        }
+
+        for (StatusEffectInstance effect : this.getStatusEffects()) {
+            servant.addStatusEffect(new StatusEffectInstance(effect));
+        }
+
         servant.setPosition(this.getX(), this.getY(), this.getZ());
         world.spawnEntity(servant);
         this.remove(RemovalReason.DISCARDED);
@@ -254,6 +296,22 @@ public class SkeletonHeadEntity extends HostileEntity implements GeoEntity {
 
     public void setVariant(SkeletonHeadVariant variant) {
         this.dataTracker.set(DATA_ID_TYPE_VARIANT, variant.getId() & 255);
+    }
+
+    @Override
+    public RegistryKey<LootTable> getLootTableId() {
+        if (this.getVariant() == SkeletonHeadVariant.WITHER_SKELETON) {
+            return  RegistryKey.of(RegistryKeys.LOOT_TABLE, Identifier.of(MebahelsSkullRevival.MOD_ID, "entities/wither_skeleton_head"));
+        }
+        return RegistryKey.of(RegistryKeys.LOOT_TABLE, Identifier.of(MebahelsSkullRevival.MOD_ID, "entities/skeleton_head"));
+    }
+
+    @Override
+    public int getXpToDrop() {
+        if (!SkeletonHeadModConfig.skeletonHeadShouldDropExperience) {
+            return 0;
+        }
+        return super.getXpToDrop();
     }
 }
 

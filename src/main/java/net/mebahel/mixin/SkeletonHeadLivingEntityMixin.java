@@ -2,13 +2,16 @@ package net.mebahel.mixin;
 
 import net.mebahel.accessor.ReanimatedFlagAccessor;
 import net.mebahel.accessor.SpawnedFromSpawnerAccessor;
-import net.mebahel.entity.ModEntities;
+import net.mebahel.entity.SkeletonHeadModEntities;
 import net.mebahel.entity.SkeletonHeadEntity;
 import net.mebahel.entity.variant.SkeletonHeadVariant;
-import net.mebahel.util.config.ModConfig;
+import net.mebahel.util.config.SkeletonHeadModConfig;
 import net.mebahel.util.config.SkullEntityListConfig;
+import net.minecraft.entity.EquipmentSlot;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.damage.DamageSource;
+import net.minecraft.item.ItemStack;
+import net.minecraft.entity.effect.StatusEffectInstance;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.Identifier;
 import net.minecraft.registry.Registries;
@@ -18,15 +21,18 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(LivingEntity.class)
-public abstract class LivingEntityMixin {
+public abstract class SkeletonHeadLivingEntityMixin {
 
     @Inject(method = "onDeath", at = @At("TAIL"))
     private void spawnSkullOnDeath(DamageSource source, CallbackInfo ci) {
         LivingEntity entity = (LivingEntity)(Object)this;
 
         if (!entity.getWorld().isClient && entity.getWorld() instanceof ServerWorld serverWorld) {
-            if (entity instanceof ReanimatedFlagAccessor reanimated && reanimated.isReanimated()) return;
-            if (entity instanceof SpawnedFromSpawnerAccessor spawner && spawner.isFromSpawner()) return;
+            if (!SkeletonHeadModConfig.reanimatedEntitiesCanSpawnHeads
+                    && entity instanceof ReanimatedFlagAccessor reanimated
+                    && reanimated.isReanimated()) return;
+            if (!SkeletonHeadModConfig.canSpawnFromSpawner)
+                if (entity instanceof SpawnedFromSpawnerAccessor spawner && spawner.isFromSpawner()) return;
 
             Identifier entityId = Registries.ENTITY_TYPE.getId(entity.getType());
             SkeletonHeadVariant variant = null;
@@ -34,20 +40,33 @@ public abstract class LivingEntityMixin {
 
             if (SkullEntityListConfig.isSkeletonHeadEntity(entityId)) {
                 variant = SkeletonHeadVariant.SKELETON;
-                chance = ModConfig.skeletonHeadSpawnRate / 100f;
+                chance = SkeletonHeadModConfig.skeletonHeadSpawnRate / 100f;
             } else if (SkullEntityListConfig.isWitherSkeletonHeadEntity(entityId)) {
                 variant = SkeletonHeadVariant.WITHER_SKELETON;
-                chance = ModConfig.witherSkeletonHeadSpawnRate / 100f;
+                chance = SkeletonHeadModConfig.witherSkeletonHeadSpawnRate / 100f;
             }
 
             if (variant != null && serverWorld.getRandom().nextFloat() < chance) {
-                SkeletonHeadEntity skull = ModEntities.SKELETON_HEAD.create(serverWorld);
+                SkeletonHeadEntity skull = SkeletonHeadModEntities.SKELETON_HEAD.create(serverWorld);
                 if (skull != null) {
                     skull.setPosition(entity.getX(), entity.getY(), entity.getZ());
                     skull.setVariant(variant);
-
-                    // ✅ Spécifie l'entité à réanimer
                     skull.setEntityToRespawn(entityId);
+                    skull.setHealthFromOriginal(entity.getMaxHealth());
+
+                    if (entity.hasCustomName()) {
+                        skull.setCustomName(entity.getCustomName());
+                        skull.setCustomNameVisible(entity.isCustomNameVisible());
+                    }
+
+                    for (StatusEffectInstance effect : entity.getStatusEffects()) {
+                        skull.addStatusEffect(new StatusEffectInstance(effect));
+                    }
+
+                    ItemStack headStack = entity.getEquippedStack(EquipmentSlot.HEAD);
+                    if (!headStack.isEmpty()) {
+                        skull.equipStack(EquipmentSlot.HEAD, headStack.copy());
+                    }
 
                     serverWorld.spawnEntity(skull);
                 }
